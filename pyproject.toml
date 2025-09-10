@@ -1,0 +1,84 @@
+[project]
+name = "gmail-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "authlib>=1.6.3",
+    "coredis>=5.0.1",
+    "fastapi>=0.116.1",
+    "google-api-python-client>=2.181.0",
+    "google-auth-oauthlib>=1.2.2",
+    "google-cloud-pubsub>=2.31.1",
+    "loguru>=0.7.3",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "redis>=6.4.0",
+    "sqlalchemy>=2.0.43",
+    "taskiq>=0.11.18",
+    "taskiq-redis>=1.1.0",
+    "uvicorn>=0.35.0",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+    "huggingface-hub>=0.34.4",
+    "transformers>=4.56.1",
+    "itsdangerous>=2.2.0",
+    "asyncpg>=0.30.0",
+]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+torchvision = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+
+[dependency-groups]
+dev = [
+    "alembic",
+    "basedpyright",
+    "black",
+    "ipython",
+    "isort",
+    "loguru",
+    "python-json-logger",
+    "types-aioboto3[essential]",
+    "types-redis",
+]
+
+[tool.pyright]
+include = ["."]
+venvPath = "./"
+venv = ".venv"
+extraPaths = [".venv", ".env", "venv", "env", "pod/.venv"]
+typeCheckingMode = "strict"
+pythonVersion = "3.13"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 160
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+mypy_path = [".venv", ".env", "venv", "env", "./pod/.venv", "./pod/.env"]
+files = ["./", "./pod/"]
+strict = true
+ignore_missing_imports = false
+
+[tool.black]
+line-length = 160
+target-version = ["py313"]
+
+[tool.ty.src]
+root = "./"
+
+[tool.ty.environment]
+python = ".venv"
+python-version = "3.13"
+
