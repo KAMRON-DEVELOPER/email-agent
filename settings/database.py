@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import asynccontextmanager
 
 # import ssl
 from typing import Annotated, AsyncGenerator
@@ -25,6 +26,12 @@ async_session = async_sessionmaker(async_engine, expire_on_commit=False, class_=
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session() as session:
+        yield session
+
+
+@asynccontextmanager
+async def get_db_session():
     async with async_session() as session:
         yield session
 

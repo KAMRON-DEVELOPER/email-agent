@@ -1,15 +1,16 @@
 import asyncio
+import json
 from contextlib import asynccontextmanager
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from google.oauth2.credentials import Credentials
 from sqlalchemy import select
 from starlette.middleware.sessions import SessionMiddleware
 
-from services.google_auth import get_google_auth_flow
-from services.pubsub_pull import PubSubListener, PubSubListenerAsync
+from services.google_apis import PubSubListener, PubSubListenerAsync, get_google_auth_flow, get_user_info, start_watching_gmail, stop_watching_gmail
 from settings.config import get_settings
 from settings.database import DBSession, initialize_db
 from settings.models import AccountModel
@@ -84,6 +85,10 @@ async def google_auth_redirect(request: Request):
 @app.get("/auth/callback")
 async def google_auth_callback(request: Request, code: str, state: str, session: DBSession):
     logger.debug(f"request.session: {request.session}")
+    logger.debug(f"code: {code}")
+    logger.debug(f"state: {state}")
+    logger.debug(f"request.session.get('state'): {request.session.get('state')}")
+
     session_state = request.session.get("state")
     if not session_state or state != session_state:
         raise HTTPException(status_code=400, detail="Invalid state parameter.")
@@ -98,10 +103,10 @@ async def google_auth_callback(request: Request, code: str, state: str, session:
         credentials = flow.credentials
         logger.debug(f"credentials: {credentials.to_json()}")
 
-        from services.google_auth import get_user_info
-
         user_info = get_user_info(credentials)
         user_email = user_info.get("email")
+
+        logger.debug(f"user_info: {user_info}, user_email: {user_email}")
 
         if not user_email:
             raise HTTPException(status_code=400, detail="Could not retrieve email.")
@@ -119,11 +124,14 @@ async def google_auth_callback(request: Request, code: str, state: str, session:
             logger.info(f"Added new account {user_email}")
 
         await session.commit()
+
+        history_id = start_watching_gmail(credentials=credentials)
+        logger.info(f"Started watching Gmail for {user_email}, history_id={history_id}")
     except Exception as e:
         logger.error(f"Error during Google auth callback: {e}")
         raise HTTPException(status_code=500, detail="Authentication failed.")
 
-    return RedirectResponse(url="/")
+    return RedirectResponse(url="/", status_code=303)
 
 
 @app.post("/disconnect/{account_id}")
@@ -138,7 +146,11 @@ async def disconnect_account(request: Request, account_id: UUID, session: DBSess
     if not account:
         raise HTTPException(status_code=404, detail="Account not found.")
 
+    credentials = Credentials.from_authorized_user_info(info=json.loads(account.credentials))
+    stop_watching_gmail(credentials=credentials)
+
     await session.delete(account)
     await session.commit()
-    logger.info(f"Disconnected account {account.gmail_address}")
-    return RedirectResponse(url="/")
+
+    logger.info(f"Stopped Gmail watch and disconnected {account.gmail_address}")
+    return RedirectResponse(url="/", status_code=303)

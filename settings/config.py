@@ -11,12 +11,22 @@ class Settings(BaseSettings):
 
     PROJECT_ROOT: Path = Path(__file__).parent.parent.resolve()
     SERVICE_ACCOUNT_FILE_PATH: ClassVar[Path] = PROJECT_ROOT / "service-account.json"
+    CLIENT_SECRETS_FILE: ClassVar[Path] = PROJECT_ROOT / "client_secret.json"
 
     PROJECT_ID: ClassVar[str] = "gmail-api-project-471605"
     TOPIC_ID: ClassVar[str] = "gmail-events"
     SUBSCRIPTION_ID: ClassVar[str] = "gmail-subscriptions"
     TOPIC_NAME: ClassVar[str] = "projects/{PROJECT_ID}/topics/{TOPIC_ID}".format(PROJECT_ID=PROJECT_ID, TOPIC_ID=TOPIC_ID)
     SUBSCRIPTION_NAME: ClassVar[str] = "projects/{PROJECT_ID}/subscriptions/{SUBSCRIPTION_ID}".format(PROJECT_ID=PROJECT_ID, SUBSCRIPTION_ID=SUBSCRIPTION_ID)
+
+    REDIRECT_URI: ClassVar[str] = "http://localhost:8000/auth/callback"
+    SCOPES: ClassVar[list[str]] = [
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/gmail.readonly",
+        "https://www.googleapis.com/auth/gmail.send",
+    ]
 
     BASE_DIR: Path = Path(__file__).parent.parent.resolve()
     TEMP_IMAGES_FOLDER_PATH: Path = BASE_DIR / "static/images"
